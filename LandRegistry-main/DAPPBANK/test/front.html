@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Land Registry System</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .land-record {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Blockchain Land Registry System</h1>
+    </header>
+
+    <div class="container">
+        <h2>Register Land</h2>
+        <input type="number" id="landId" placeholder="Land ID">
+        <input type="text" id="landLocation" placeholder="Land Location">
+        <input type="number" id="landArea" placeholder="Land Area (sq. meters)">
+        <button onclick="registerLand()">Register Land</button>
+
+        <h2>Transfer Ownership</h2>
+        <input type="number" id="transferLandId" placeholder="Land ID">
+        <input type="text" id="newOwner" placeholder="New Owner Address">
+        <button onclick="transferOwnership()">Transfer Ownership</button>
+
+        <h2>Land Records</h2>
+        <input type="number" id="queryLandId" placeholder="Land ID">
+        <button onclick="getLandDetails()">Get Land Details</button>
+        <div id="landRecords"></div>
+    </div>
+
+    <script>
+        // ============= CONFIGURATION SECTION =============
+
+        const GANACHE_RPC_URL = 'http://127.0.0.1:7545'; // Replace with your Ganache RPC URL
+        const CONTRACT_ADDRESS = '0xd4548Ef09b23791a394a3B5036A28cbbf5515E14'; // Replace with your deployed contract address
+        const CONTRACT_ABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_location",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "_area",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "registerLand",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "_newOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "transferOwnership",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "_id",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getLand",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        
+        // ===============================================
+
+        // Initialize Web3 with Ganache
+        if (typeof window.ethereum !== 'undefined') {
+            window.web3 = new Web3(window.ethereum);
+            window.ethereum.request({ method: 'eth_requestAccounts' });
+        } else {
+            // If MetaMask is not installed, use Ganache RPC URL
+            window.web3 = new Web3(new Web3.providers.HttpProvider(GANACHE_RPC_URL));
+            console.log('Using Ganache RPC URL:', GANACHE_RPC_URL);
+        }
+
+        // Initialize the contract
+        const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+
+        async function registerLand() {
+            const accounts = await web3.eth.getAccounts();
+            const landId = document.getElementById('landId').value;
+            const landLocation = document.getElementById('landLocation').value;
+            const landArea = document.getElementById('landArea').value;
+
+            try {
+                await contract.methods.registerLand(landId, landLocation, landArea).send({ from: accounts[0] });
+                alert('Land registered successfully!');
+            } catch (error) {
+                console.error(error);
+                alert('Error registering land.');
+            }
+        }
+
+        async function transferOwnership() {
+            const accounts = await web3.eth.getAccounts();
+            const landId = document.getElementById('transferLandId').value;
+            const newOwner = document.getElementById('newOwner').value;
+
+            try {
+                await contract.methods.transferOwnership(landId, newOwner).send({ from: accounts[0] });
+                alert('Ownership transferred successfully!');
+            } catch (error) {
+                console.error(error);
+                alert('Error transferring ownership.');
+            }
+        }
+
+        async function getLandDetails() {
+            const landId = document.getElementById('queryLandId').value;
+
+            try {
+                const land = await contract.methods.getLand(landId).call();
+                const landRecordsDiv = document.getElementById('landRecords');
+                landRecordsDiv.innerHTML = `<div class="land-record">
+                    <strong>ID:</strong> ${land[0]}<br>
+                    <strong>Location:</strong> ${land[1]}<br>
+                    <strong>Area:</strong> ${land[2]} sq. meters<br>
+                    <strong>Owner:</strong> ${land[3]}<br>
+                    <strong>Registered:</strong> ${land[4]}
+                </div>`;
+            } catch (error) {
+                console.error(error);
+                alert('Error fetching land details.');
+            }
+        }
+    </script>
+</body>
+</html>
